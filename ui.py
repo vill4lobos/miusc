@@ -1,10 +1,10 @@
 import curses
-#from functools import reduce
+# from functools import reduce
 
 
 def debug():
     curses.nocbreak()
-    #self.screen.keypad(0)
+    # self.screen.keypad(0)
     curses.echo()
     curses.endwin()
     breakpoint()
@@ -17,17 +17,12 @@ class UI(object):
         self.screen = screen
         self.y_limit, self.x_limit = screen.getmaxyx()
         self.x_center = self.x_limit // 2
+        self.position = 0
 
-    def generate_genres(self):
-        old_lst = self.max_genres(Get.genre_list, self.x_limit)
-        lst = [(len(old_lst[0]), old_lst[0])]
-
-        for i in range(1, len(old_lst) - 1):
-            lst.append((len(old_lst[i]) + lst[i - 1][0] + self.GENRE_SEPARATE,
-                       old_lst[i]))
-
-        return lst
-
+    """
+    Returns a list of tuples with all elements and their lengths that can fit
+    at max x.length of terminal with index[0] at the middle of the list
+    """
     def create_genres_list(self, lst):
         center = self.center_str(lst[0])
         left = center
@@ -65,32 +60,12 @@ class UI(object):
 
         return lst_genres
 
-    """
-    Returns a list with all elements that can fit at max x.length of terminal
-    with index[0] at the middle of the list
-    """
-    def max_genres(self, lst, max):
-        stop = 0
-        index = 0
-
-        for i, item in enumerate(lst):
-            if i < len(lst) - 1 and             \
-                stop + len(lst[i + 1]) + self.GENRE_SEPARATE >= max:
-                # return lst[:i + 1]
-                index = i
-                break
-            else:
-                stop += len(item) + self.GENRE_SEPARATE
-
-        #return map(lambda x: (len(x) + self.GENRE_SEPARATE, x),
-        return lst[-index // 2:] + lst[:index // 2]
-
     def max_albums(self, lst, max):
         stop = 0
 
         for i, item in enumerate(lst):
             if i < len(lst) - 1 and             \
-                stop + len(lst[i + 1]) >= max:
+               stop + len(lst[i + 1]) >= max:
                 return lst[:i + 1]
             else:
                 stop += len(item) + self.GENRE_SEPARATE
@@ -116,7 +91,6 @@ class UI(object):
 
     def navigate(self, b):
         self.position += 1 if b else -1
-
 
 
 class Get:
