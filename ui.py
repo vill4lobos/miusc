@@ -28,6 +28,43 @@ class UI(object):
 
         return lst
 
+    def create_genres_list(self, lst):
+        center = self.center_str(lst[0])
+        left = center
+        right = center  # + len(lst[0])
+
+        lst_genres = [(center, lst[0])]
+        lst.pop(0)
+
+        i, j, stop, b = 0, 0, 0, False
+        while i < len(lst) - 1:
+            b = not b
+            i += 1
+
+            if b:
+                right = right + len(lst[j]) + self.GENRE_SEPARATE
+
+                if right >= self.x_limit:
+                    j += 1
+                    continue
+
+                lst_genres.append((right, lst[j]))
+                stop += len(lst[j]) + self.GENRE_SEPARATE
+                j += 1
+
+            else:
+                left = left - len(lst[-j]) - self.GENRE_SEPARATE
+                if left <= 0:
+                    continue
+
+                lst_genres.append((left, lst[-j]))
+                stop += len(lst[-j]) + self.GENRE_SEPARATE
+
+            if stop >= self.x_limit:
+                break
+
+        return lst_genres
+
     """
     Returns a list with all elements that can fit at max x.length of terminal
     with index[0] at the middle of the list
@@ -64,7 +101,8 @@ class UI(object):
         return self.x_center - (len(str) // 2)
 
     def display_genres(self):
-        lst_genres = self.generate_genres()
+        # lst_genres = self.generate_genres()
+        lst_genres = self.create_genres_list(Get.genre_list)
 
         for i, item in lst_genres:
             self.screen.addstr(0, i, item,
@@ -76,18 +114,25 @@ class UI(object):
         for i, item in enumerate(max):
             self.screen.addstr(1 + i, 20, item, curses.A_BLINK)
 
+    def navigate(self, b):
+        self.position += 1 if b else -1
+
+
+
 class Get:
 
-    #genre_list = ["fuck", "your", "self", "fuck", "your", "self", "fuck", "your", "self", "fuck", "your", "self", "fuck", "your", "self"]
     genre_list = [str(x) for x in range(100, 201)]
-    album_list = ["fuck", "your", "self", "fuck", "your", "self", "fuck", "your", "self", "fuck", "your", "self", "fuck", "your", "self"]
+    album_list = ["fuck", "your", "selfffff", "fuck", "your", "self", "fuck",
+                  "your", "self", "fuck", "your", "self", "fuck", "your",
+                  "self"]
 
     def __init__(self):
         pass
-    
+
     def get_albums(self, url):
         pass
-    
+
+
 def main(screen):
 
     menu = UI(screen)
