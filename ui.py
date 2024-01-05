@@ -17,46 +17,49 @@ class UI(object):
         self.screen = screen
         self.y_limit, self.x_limit = screen.getmaxyx()
         self.x_center = self.x_limit // 2
-        self.position = 0
+        self.positionx = 0
 
     """
     Returns a list of tuples with all elements and their lengths that can fit
     at max x.length of terminal with index[0] at the middle of the list
     """
+    # TODO: fix list out of range when more than 90 movements in the same direction
     def create_genres_list(self, lst):
-        center = self.center_str(lst[0])
+        center = self.center_str(lst[self.positionx])
         left = center
         right = center  # + len(lst[0])
+        left_go = self.positionx
 
-        lst_genres = [(center, lst[0])]
-        lst.pop(0)
+        lst_genres = [(center, lst[self.positionx])]
 
-        i, j, stop, b = 0, 0, 0, False
+        i, j, stop, b = 0, self.positionx, 0, False
         while i < len(lst) - 1:
             b = not b
-            i += 1
 
             if b:
                 right = right + len(lst[j]) + self.GENRE_SEPARATE
 
                 if right >= self.x_limit:
-                    j += 1
-                    continue
+                    break
 
                 lst_genres.append((right, lst[j]))
                 stop += len(lst[j]) + self.GENRE_SEPARATE
                 j += 1
 
             else:
-                left = left - len(lst[-j]) - self.GENRE_SEPARATE
-                if left <= 0:
-                    continue
+                left_go -= 1
+                left = left - len(lst[left_go]) - self.GENRE_SEPARATE
 
-                lst_genres.append((left, lst[-j]))
-                stop += len(lst[-j]) + self.GENRE_SEPARATE
+                if left <= 0:
+                    break
+
+                lst_genres.append((left, lst[left_go]))
+                stop += len(lst[left_go]) + self.GENRE_SEPARATE
 
             if stop >= self.x_limit:
                 break
+
+            i += 1
 
         return lst_genres
 
@@ -76,8 +79,10 @@ class UI(object):
         return self.x_center - (len(str) // 2)
 
     def display_genres(self):
-        # lst_genres = self.generate_genres()
         lst_genres = self.create_genres_list(Get.genre_list)
+        self.screen.addstr(0, lst_genres[0][0], lst_genres[0][1],
+                           curses.A_REVERSE)
+        lst_genres.pop(0)
 
         for i, item in lst_genres:
             self.screen.addstr(0, i, item,
