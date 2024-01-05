@@ -18,22 +18,34 @@ class UI(object):
         self.x_center = self.x_limit // 2
 
     def generate_genres(self):
-        old_lst = self.max_albums(Get.genre_list, self.x_limit)
-        lst = list()
+        old_lst = self.max_genres(Get.genre_list, self.x_limit)
+        lst = [(len(old_lst[0]), old_lst[0])]
 
-        i, j, b = 0, 0, False
-        while i < len(old_lst) - 1:
-            b = not b
+        for i in range(1, len(old_lst) - 1):
+            lst.append((len(old_lst[i]) + lst[i - 1][0] + self.GENRE_SEPARATE,
+                       old_lst[i]))
 
-            if b:
-               lst.append(old_lst[j])
-               j += 1
-            else:
-                lst.insert(0, old_lst[-j])
-            
-            i += 1
-        
         return lst
+
+    """
+    Returns a list with all elements that can fit at max x.length of terminal
+    with index[0] at the middle of the list
+    """
+    def max_genres(self, lst, max):
+        stop = 0
+        index = 0
+
+        for i, item in enumerate(lst):
+            if i < len(lst) - 1 and             \
+                stop + len(lst[i + 1]) + self.GENRE_SEPARATE >= max:
+                # return lst[:i + 1]
+                index = i
+                break
+            else:
+                stop += len(item) + self.GENRE_SEPARATE
+
+        #return map(lambda x: (len(x) + self.GENRE_SEPARATE, x),
+        return lst[-index // 2:] + lst[:index // 2]
 
     def max_albums(self, lst, max):
         stop = 0
