@@ -1,4 +1,6 @@
 import curses
+import string
+import random as rd
 # from functools import reduce
 
 
@@ -18,12 +20,16 @@ class UI(object):
         self.y_limit, self.x_limit = screen.getmaxyx()
         self.x_center = self.x_limit // 2
         self.positionx = 0
+        self.positiony = 0
+        self.genres_height = 0
+        self.albums_height = 2
 
     """
     Returns a list of tuples with all elements and their lengths that can fit
     at max x.length of terminal with index[0] at the middle of the list
     """
-    # TODO: fix list out of range when more than 90 movements in the same direction
+    # TODO: fix list out of range when more than 90 movements in the same
+    # direction
     def create_genres_list(self, lst):
         center = self.center_str(lst[self.positionx])
         left = center
@@ -94,16 +100,24 @@ class UI(object):
         for i, item in enumerate(max):
             self.screen.addstr(1 + i, 20, item, curses.A_BLINK)
 
-    def navigate(self, b):
-        self.position += 1 if b else -1
+    def navigatey(self, b):
+        self.positionx += 1 if b else -1
+        self.display_ui()
+
+    def display_ui(self):
+        self.screen.refresh()
+        self.display_genres()
+        self.display_albums()
 
 
 class Get:
 
     genre_list = [str(x) for x in range(100, 201)]
-    album_list = ["fuck", "your", "selfffff", "fuck", "your", "self", "fuck",
-                  "your", "self", "fuck", "your", "self", "fuck", "your",
-                  "self"]
+    #album_list = [list(string.ascii_lowercase)[rd.randint(0, 26)]
+    #              for x in range(0, rd.randint(15, 30))]
+    album_list = [''.join([list(string.ascii_lowercase)[rd.randint(0, 25)]
+                  for x in range(0, rd.randint(15, 30))])
+                  for x in range(30)]
 
     def __init__(self):
         pass
@@ -120,8 +134,23 @@ def main(screen):
     menu.display_genres()
     menu.display_albums()
 
+    while True:
+        screen.refresh()
+        key = screen.getch()
+
+        if key == curses.KEY_ENTER:
+            break
+        elif key == curses.KEY_RIGHT:
+            menu.navigatey(True)
+        elif key == curses.KEY_LEFT:
+            menu.navigatey(False)
+        elif key == curses.KEY_UP:
+            menu.navigatey(False)
+        elif key == curses.KEY_DOWN:
+            menu.navigatey(True)
+
     screen.refresh()
-    screen.getch()
+
 
 if __name__ == "__main__":
     curses.wrapper(main)
