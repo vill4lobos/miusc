@@ -206,15 +206,15 @@ def main(screen):
         screen.refresh()
         key = screen.getch()
 
-        if key == curses.KEY_ENTER:
+        if key == ord('q'):
             break
         elif key == curses.KEY_RIGHT:
             menu.navigatey(True)
         elif key == curses.KEY_LEFT:
             menu.navigatey(False)
-        elif key == curses.KEY_UP:
+        elif key in [curses.KEY_UP, ord('k')]:
             menu.navigatey(False)
-        elif key == curses.KEY_DOWN:
+        elif key in [curses.KEY_DOWN, ord('j')]:
             menu.navigatey(True)
 
     screen.refresh()
