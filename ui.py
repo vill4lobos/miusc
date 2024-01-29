@@ -1,6 +1,7 @@
 import curses
 import string
 import random as rd
+from collections import deque
 # from functools import reduce
 
 
@@ -20,12 +21,12 @@ class UI(object):
         self.y_limit, self.x_limit = screen.getmaxyx()
         self.x_center = self.x_limit // 2
         self.positionx = 0
-        self.positiony = 0
-        self.old_positiony = 0
         self.genres_height = 0
         self.albums_height = 2
+        self.last_movement = None
+        self.y_index = 0
 
-        self.last_lst = Get.album_list
+        self.dq = deque(Get.album_list)
 
     """
     Returns a list of tuples with all elements and their lengths that can fit
@@ -72,39 +73,20 @@ class UI(object):
 
         return lst_genres
 
-    def create_albums_list(self, lst):
+    def move_albums_list(self):
         limit = self.y_limit - self.albums_height - 1
-        test = self.positiony - self.old_positiony + 1
 
-        if test > limit:
-            self.old_positiony = self.positiony
-
-        if self.old_positiony < 0 and self.positiony < 0:
-            self.last_lst = lst[self.old_positiony - 1:] + lst[:self.old_positiony]
-
-        elif self.positiony < 0:
-            self.last_lst = lst[self.positiony:] + lst[:self.positiony]
-
-        elif self.positiony < self.old_positiony:
-            self.last_lst
-
-        elif self.positiony > limit:
-            self.old_positiony = self.positiony
-            self.last_lst = lst[self.positiony - limit:] + lst[:self.positiony - limit]
-
-        return self.last_lst
-
-    def max_albums(self, lst, max):
-        stop = 0
-
-        for i, item in enumerate(lst):
-            if i < len(lst) - 1 and             \
-               stop + len(lst[i + 1]) >= max:
-                return lst[:i + 1]
+        if self.last_movement is True:
+            if self.y_index == limit:
+                self.dq.rotate(-1)
             else:
-                stop += len(item) + self.GENRE_SEPARATE
+                self.y_index += 1
 
-        return lst
+        elif self.last_movement is False:
+            if self.y_index == 0:
+                self.dq.rotate(1)
+            elif self.y_index != 0:
+                self.y_index -= 1
 
     def center_str(self, str):
         return self.x_center - (len(str) // 2)
@@ -120,36 +102,17 @@ class UI(object):
                                curses.A_ITALIC)
 
     def display_albums(self):
-        lst_albums = self.create_albums_list(Get.album_list)
-        self.screen.addstr(0, 0, str(self.positiony))
-        self.screen.addstr(1, 0, str(self.old_positiony))
-        self.screen.addstr(2, 0, str(self.positiony - self.old_positiony + 1))
-        self.screen.addstr(3, 0, str(self.y_limit))
-        self.screen.addstr(4, 0, str(self.albums_height))
-        k = False
-        test = self.positiony - self.old_positiony + 1
+        self.move_albums_list()
+        lst_albums = self.dq
 
         for i, item in enumerate(lst_albums):
             if i == self.y_limit - self.albums_height:
                 break
 
-            if not k and \
-               ((i == self.positiony and (self.positiony >= 0
-                        and self.old_positiony >= 0)) or
-               (i == ((self.y_limit - self.albums_height) - 
-                      (self.old_positiony - self.positiony)) and
-                 self.old_positiony > self.positiony > 0) or
-                
-                (i == test and self.old_positiony < 0) or
-                #i == (self.old_positiony + self.old_positiony < 0
-                #(i == )
-                
-               (self.positiony < 0 and i == 0 and test < 0)):
-
+            if self.y_index == i:
                 self.screen.addstr(self.albums_height + i,
                                    self.center_str(item), item,
                                    curses.A_BLINK | curses.A_REVERSE)
-                k = True
                 continue
 
             self.screen.addstr(self.albums_height + i,
@@ -160,14 +123,7 @@ class UI(object):
         self.display_ui()
 
     def navigatey(self, b):
-        if not b and self.positiony < 0 and self.positiony < self.old_positiony:
-            self.old_positiony = self.positiony
-        #elif b and self.positiony > 0 
-        self.positiony += 1 if b else -1
-        
-        #if self.positiony >= 0:
-        #    self.old_positiony = 0
-        
+        self.last_movement = True if b else False
         self.display_ui()
 
     def display_ui(self):
