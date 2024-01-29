@@ -25,8 +25,9 @@ class UI(object):
         self.albums_height = 2
         self.last_movement = None
         self.y_index = 0
+        self.last_axis = ''
 
-        self.dq = deque(Get.album_list)
+        self.dq = deque(Get.get_albums())
 
     """
     Returns a list of tuples with all elements and their lengths that can fit
@@ -101,8 +102,9 @@ class UI(object):
             self.screen.addstr(0, i, item,
                                curses.A_ITALIC)
 
-    def display_albums(self):
-        self.move_albums_list()
+    def display_albums(self, move=False):
+        if move:
+            self.move_albums_list()
         lst_albums = self.dq
 
         for i, item in enumerate(lst_albums):
@@ -118,36 +120,46 @@ class UI(object):
             self.screen.addstr(self.albums_height + i,
                                self.center_str(item), item, curses.A_BOLD)
 
-    def navigatex(self, b):
+    def x_navigate(self, b):
+        self.last_axis = 'x'
         self.positionx += 1 if b else -1
         self.display_ui()
 
-    def navigatey(self, b):
+    def y_navigate(self, b):
+        self.last_axis = 'y'
         self.last_movement = True if b else False
         self.display_ui()
 
     def display_ui(self):
         self.screen.refresh()
         self.screen.clear()
+
+        if self.last_axis == 'y':
+            self.display_albums(True)
+
+        elif self.last_axis == 'x':
+            self.dq = deque(Get.get_albums())
+            self.y_index = 0
+            self.display_albums()
+
         self.display_genres()
-        self.display_albums()
 
 
 class Get:
 
     genre_list = [str(x) for x in range(100, 201)]
-    #album_list = [list(string.ascii_lowercase)[rd.randint(0, 26)]
-    #              for x in range(0, rd.randint(15, 30))]
-    album_list = [str(i) + "   " + x for i, x in enumerate(
-                  [''.join([list(string.ascii_lowercase)[rd.randint(0, 25)]
-                  for x in range(0, rd.randint(15, 30))])
-                  for x in range(30)])]
+    # album_list = [list(string.ascii_lowercase)[rd.randint(0, 26)]
+    #               for x in range(0, rd.randint(15, 30))]
 
     def __init__(self):
         pass
 
-    def get_albums(self, url):
-        pass
+    @staticmethod
+    def get_albums():
+        return [str(i) + "   " + x for i, x in enumerate(
+                  [''.join([list(string.ascii_lowercase)[rd.randint(0, 25)]
+                  for x in range(0, rd.randint(15, 30))])
+                  for x in range(30)])]
 
 
 def main(screen):
@@ -164,14 +176,14 @@ def main(screen):
 
         if key == ord('q'):
             break
-        elif key == curses.KEY_RIGHT:
-            menu.navigatey(True)
-        elif key == curses.KEY_LEFT:
-            menu.navigatey(False)
+        elif key in [curses.KEY_RIGHT, ord('h')]:
+            menu.x_navigate(True)
+        elif key in [curses.KEY_LEFT, ord('l')]:
+            menu.x_navigate(False)
         elif key in [curses.KEY_UP, ord('k')]:
-            menu.navigatey(False)
+            menu.y_navigate(False)
         elif key in [curses.KEY_DOWN, ord('j')]:
-            menu.navigatey(True)
+            menu.y_navigate(True)
 
     screen.refresh()
 
