@@ -83,7 +83,7 @@ class UI(object):
         # TODO: padding around the dq_genres
         len_total = 0  # max(self.x_limit - sum(map(len, lst_genres)), 0) // 2
         for i, item in enumerate(lst_genres):
-            if i == len(lst_genres) // 2 + 1:
+            if i == int(len(lst_genres) / 2):
                 self.screen.addstr(0, len_total, item,
                                    curses.A_REVERSE)
             else:
