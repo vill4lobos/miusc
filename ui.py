@@ -31,8 +31,6 @@ class UI(object):
     y_index : int
         current position of the album displayed in screen, never going
         below 0, or above x_limit
-    last_axis : str
-        'x' or 'y', to indicate the last axis moved
     """
     GENRE_SEPARATE = 2
 
@@ -44,7 +42,6 @@ class UI(object):
         self.albums_height = 2
         self.last_movement = None
         self.y_index = 0
-        self.last_axis = ''
 
         self.dq_album = deque(Get.get_albums())
         self.dq_genre = deque(Get.genre_list)
@@ -157,25 +154,23 @@ class UI(object):
                 self.screen.addstr(self.albums_height + i,
                                    self.center_str(item), item, curses.A_BOLD)
 
-    def x_navigate(self, b):
-        self.last_axis = 'x'
-        self.last_movement = True if b else False
-        self.display_ui()
+    def display_ui(self, axis, movement):
+        """
+        Set movement attributes and display albums based on which axis moved
 
-    def y_navigate(self, b):
-        self.last_axis = 'y'
-        self.last_movement = True if b else False
-        self.display_ui()
-
-    def display_ui(self):
+        axis -- which axis was moved
+        movement -- True if down, right and False if up, left
+        """
         self.screen.refresh()
         self.screen.clear()
 
-        if self.last_axis == 'y':
+        self.last_movement = True if movement else False
+
+        if axis == 'y':
             self.display_albums(True)
             self.display_genres()
 
-        elif self.last_axis == 'x':
+        elif axis == 'x':
             self.dq_album = deque(Get.get_albums())
             self.y_index = 0
             self.display_albums()
@@ -214,13 +209,13 @@ def main(screen):
         if key == ord('q'):
             break
         elif key in [curses.KEY_RIGHT, ord('h')]:
-            menu.x_navigate(True)
+            menu.display_ui('x', True)
         elif key in [curses.KEY_LEFT, ord('l')]:
-            menu.x_navigate(False)
+            menu.display_ui('x', False)
         elif key in [curses.KEY_UP, ord('k')]:
-            menu.y_navigate(False)
+            menu.display_ui('y', False)
         elif key in [curses.KEY_DOWN, ord('j')]:
-            menu.y_navigate(True)
+            menu.display_ui('y', True)
 
     screen.refresh()
 
