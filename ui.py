@@ -1,8 +1,7 @@
 import curses
-import string
-import random as rd
 from collections import deque
 from itertools import islice
+import requests
 
 
 def debug():
@@ -42,9 +41,10 @@ class UI(object):
         self.albums_height = 2
         self.last_movement = None
         self.y_index = 0
+        self.current_genre = ''
 
-        self.dq_album = deque(Get.get_albums())
-        self.dq_genre = deque(Get.genre_list)
+        self.dq_genre = deque(Get.get_genres())
+        self.dq_album = deque()
 
     def move_genres_list(self, move=False):
         """
@@ -66,19 +66,29 @@ class UI(object):
         count = 0
         i, j = 0, 0
         dq_middle = int(len(self.dq_genre) / 2)
+        self.current_genre = self.dq_genre[dq_middle]
 
         for i, j in enumerate(range(dq_middle, len(self.dq_genre)), 1):
             count += self.GENRE_SEPARATE * 2
 
             if (count + len(self.dq_genre[dq_middle - i]) +
                len(self.dq_genre[j])) < self.x_limit:
+
                 count += len(self.dq_genre[dq_middle - i]) + \
                     len(self.dq_genre[j])
             else:
                 break
 
+        # TODO: makes any difference which genre comes first?
+        if dq_middle - i < 0:
+            return self.dq_genre
+            # return list(self.dq_genre)[dq_middle + 1:] + \
+            #         list(self.dq_genre)[:dq_middle + 1]
+
         return deque(islice(self.dq_genre, dq_middle - i, j))
 
+    # TODO: fix movement till x_limit instead of dq_album size, when size
+    #       is less than x_limit
     def move_albums_list(self):
         """Rotate deque if y_index is equal to 0 or limit, otherwise
         increment y_index
@@ -96,6 +106,9 @@ class UI(object):
                 self.dq_album.rotate(1)
             elif self.y_index != 0:
                 self.y_index -= 1
+
+    def change_albums_list(self):
+        self.dq_album = deque(Get.genres_dct[self.current_genre])
 
     # TODO: create center_deque method?
     def center_str(self, str):
@@ -131,7 +144,7 @@ class UI(object):
     def display_albums(self, move=False):
         """
         Write the elements of lst_albums along the y axis
-        
+
         Write the elements of lst_albums along the y axis starting from
         albums_height, and making the index == y_index one blinking
 
@@ -140,9 +153,8 @@ class UI(object):
         """
         if move:
             self.move_albums_list()
-        lst_albums = self.dq_album
 
-        for i, item in enumerate(lst_albums):
+        for i, item in enumerate(self.dq_album):
             if i == self.y_limit - self.albums_height:
                 break
 
@@ -154,7 +166,7 @@ class UI(object):
                 self.screen.addstr(self.albums_height + i,
                                    self.center_str(item), item, curses.A_BOLD)
 
-    def display_ui(self, axis, movement):
+    def display_ui(self, axis='', movement=None):
         """
         Set movement attributes and display albums based on which axis moved
 
@@ -164,34 +176,38 @@ class UI(object):
         self.screen.refresh()
         self.screen.clear()
 
-        self.last_movement = True if movement else False
+        if movement is not None:
+            self.last_movement = True if movement else False
 
-        if axis == 'y':
-            self.display_albums(True)
-            self.display_genres()
+        self.display_genres(True if axis == 'x' else False)
 
-        elif axis == 'x':
-            self.dq_album = deque(Get.get_albums())
+        if axis in ['x', '']:
+            self.change_albums_list()
             self.y_index = 0
-            self.display_albums()
-            self.display_genres(True)
+
+        self.display_albums(True if axis == 'y' else False)
 
 
 class Get:
 
-    genre_list = [str(x) for x in range(1000, 1050)]
+    genres_dct = {}
     # album_list = [list(string.ascii_lowercase)[rd.randint(0, 26)]
     #               for x in range(0, rd.randint(15, 30))]
 
     def __init__(self):
         pass
 
+    # @staticmethod
+    # def get_albums(genre):
+    #     return Get.genres_dct[]
+
     @staticmethod
-    def get_albums():
-        return [str(i) + "   " + x for i, x in enumerate(
-                [''.join([list(string.ascii_lowercase)[rd.randint(0, 25)]
-                 for x in range(0, rd.randint(15, 30))])
-                 for x in range(30)])]
+    def get_genres():
+
+        r = requests.get("http://127.0.0.1:5000/all").json()
+
+        Get.genres_dct = r
+        return r.keys()
 
 
 def main(screen):
@@ -199,9 +215,7 @@ def main(screen):
     menu = UI(screen)
     screen.clear()
 
-    menu.display_genres()
-    menu.display_albums()
-
+    menu.display_ui()
     while True:
         screen.refresh()
         key = screen.getch()
