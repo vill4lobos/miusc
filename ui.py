@@ -14,6 +14,26 @@ def debug():
 
 
 class UI(object):
+    """
+    Used to interact and manage the UI elements of the curses library
+
+    Attr:
+    y_limit, x_limit : int
+        the limits of the terminal in each axis
+    x_center : int
+        the center position of the x axis of the terminal in session
+    genres_height : int
+        position where genres will be written over the x axis
+    albums_height : int
+        position where albums will start being written over the y axis
+    last_movement : bool
+        True if last movement was down or right, and False if left or up
+    y_index : int
+        current position of the album displayed in screen, never going
+        below 0, or above x_limit
+    last_axis : str
+        'x' or 'y', to indicate the last axis moved
+    """
     GENRE_SEPARATE = 2
 
     def __init__(self, screen):
@@ -29,14 +49,17 @@ class UI(object):
         self.dq_album = deque(Get.get_albums())
         self.dq_genre = deque(Get.genre_list)
 
-    """
-    Returns a list of tuples with all elements and their lengths that can fit
-    at max x.length of terminal with index[0] at the middle of the list
-    """
-    # TODO: fix list out of range when more than 90 movements in the same
-    # direction
     def move_genres_list(self, move=False):
+        """
+        Return a deque with less numbers of elements than x_limit
 
+        Get the middle index of the deque, and looking ahead and behind it,
+        get the length of the maximum range of elements, (i, j), that can
+        fit inside x_limit. Then return a isliced deque with odd number of
+        elements
+
+        move -- True if x axis movement was executed
+        """
         if move:
             if self.last_movement:
                 self.dq_genre.rotate(-1)
@@ -60,6 +83,9 @@ class UI(object):
         return deque(islice(self.dq_genre, dq_middle - i, j))
 
     def move_albums_list(self):
+        """Rotate deque if y_index is equal to 0 or limit, otherwise
+        increment y_index
+        """
         limit = self.y_limit - self.albums_height - 1
 
         if self.last_movement:
@@ -74,25 +100,47 @@ class UI(object):
             elif self.y_index != 0:
                 self.y_index -= 1
 
+    # TODO: create center_deque method?
     def center_str(self, str):
+        """Center the string in the x axis center"""
         return self.x_center - (len(str) // 2)
 
     def display_genres(self, move=False):
+        """
+        Write the elements of lst_genres on the screen
+
+        Write the elements of lst_genres on the screen height = genres_height,
+        and as lst_genres has an odd number of elements, write the middle one
+        differently
+
+        move --True if the last user movement was on the x axis, to rotate
+        the deque in move_genres_list(), otherwise just generate the list
+        """
+
         lst_genres = self.move_genres_list(move)
 
         # TODO: padding around the dq_genres
         len_total = 0  # max(self.x_limit - sum(map(len, lst_genres)), 0) // 2
         for i, item in enumerate(lst_genres):
             if i == int(len(lst_genres) / 2):
-                self.screen.addstr(0, len_total, item,
+                self.screen.addstr(self.genres_height, len_total, item,
                                    curses.A_REVERSE)
             else:
-                self.screen.addstr(0, len_total, item,
+                self.screen.addstr(self.genres_height, len_total, item,
                                    curses.A_ITALIC)
 
             len_total += len(item) + 2
 
     def display_albums(self, move=False):
+        """
+        Write the elements of lst_albums along the y axis
+        
+        Write the elements of lst_albums along the y axis starting from
+        albums_height, and making the index == y_index one blinking
+
+        move -- True if the last user movement was on the y axis, otherwise
+        it will change the list of albums being presented
+        """
         if move:
             self.move_albums_list()
         lst_albums = self.dq_album
