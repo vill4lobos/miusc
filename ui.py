@@ -67,7 +67,7 @@ class UI(object):
 
         count = 0
         i, j = 0, 0
-        dq_middle = int(len(self.dq_genre) / 2)
+        dq_middle = self.center_lst(self.dq_genre)
         self.current_genre = self.dq_genre[dq_middle]
 
         for i, j in enumerate(range(dq_middle, len(self.dq_genre)), 1):
@@ -84,10 +84,10 @@ class UI(object):
         # TODO: makes any difference which genre comes first?
         if dq_middle - i < 0:
             return self.dq_genre
-            # return list(self.dq_genre)[dq_middle + 1:] + \
-            #         list(self.dq_genre)[:dq_middle + 1]
-
-        return deque(islice(self.dq_genre, dq_middle - i, j))
+        
+        dq = deque(islice(self.dq_genre, dq_middle - i, j))
+        self.current_genre = self.dq_genre[self.center_lst(dq)]
+        return dq
 
     # TODO: fix movement till x_limit instead of dq_album size, when size
     #       is less than x_limit
@@ -112,7 +112,10 @@ class UI(object):
     def change_albums_list(self):
         self.dq_album = deque(Get.genres_dct[self.current_genre])
 
-    # TODO: create center_deque method?
+    def center_lst(self, lst):
+        """Return the middle index of some indexable object"""
+        return len(lst) // 2
+
     def center_str(self, str):
         """Center the string in the x axis center"""
         return self.x_center - (len(str) // 2)
@@ -134,7 +137,7 @@ class UI(object):
         # TODO: padding around the dq_genres
         len_total = 0  # max(self.x_limit - sum(map(len, lst_genres)), 0) // 2
         for i, item in enumerate(lst_genres):
-            if i == int(len(lst_genres) / 2):
+            if i == self.center_lst(lst_genres):
                 self.screen.addstr(self.genres_height, len_total, item,
                                    curses.A_REVERSE)
             else:
