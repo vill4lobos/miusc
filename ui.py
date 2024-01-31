@@ -2,7 +2,10 @@ import curses
 from collections import deque
 from itertools import islice
 import requests
+from database import Get as GetDB
 
+from urllib3.exceptions import HTTPError
+from requests.exceptions import ConnectionError
 
 def debug():
     curses.nocbreak()
@@ -10,7 +13,6 @@ def debug():
     curses.echo()
     curses.endwin()
     breakpoint()
-
 
 class UI(object):
     """
@@ -204,7 +206,11 @@ class Get:
     @staticmethod
     def get_genres():
 
-        r = requests.get("http://127.0.0.1:5000/all").json()
+        try:
+            r = requests.get("http://127.0.0.1:5000/all").json()
+        except (ConnectionError, HTTPError) as e:
+            db = GetDB()
+            r = db.get_all_albums()
 
         Get.genres_dct = r
         return r.keys()
