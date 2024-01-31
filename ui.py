@@ -7,12 +7,14 @@ from database import Get as GetDB
 from urllib3.exceptions import HTTPError
 from requests.exceptions import ConnectionError
 
+
 def debug():
     curses.nocbreak()
     # self.screen.keypad(0)
     curses.echo()
     curses.endwin()
     breakpoint()
+
 
 class UI(object):
     """
@@ -70,7 +72,7 @@ class UI(object):
         dq_middle = self.center_lst(self.dq_genre)
         self.current_genre = self.dq_genre[dq_middle]
 
-        for i, j in enumerate(range(dq_middle, len(self.dq_genre)), 1):
+        for i, j in enumerate(range(dq_middle, len(self.dq_genre) - i), 1):
             count += self.GENRE_SEPARATE * 2
 
             if (count + len(self.dq_genre[dq_middle - i]) +
@@ -84,18 +86,22 @@ class UI(object):
         # TODO: makes any difference which genre comes first?
         if dq_middle - i < 0:
             return self.dq_genre
-        
+
         dq = deque(islice(self.dq_genre, dq_middle - i, j))
-        self.current_genre = self.dq_genre[self.center_lst(dq)]
+        self.current_genre = dq[self.center_lst(dq)]
         return dq
 
-    # TODO: fix movement till x_limit instead of dq_album size, when size
-    #       is less than x_limit
     def move_albums_list(self):
-        """Rotate deque if y_index is equal to 0 or limit, otherwise
+        """
+        Rotate deque if y_index is equal to 0 or limit, otherwise
         increment y_index
         """
-        limit = self.y_limit - self.albums_height - 1
+
+        limit = 0
+        if len(self.dq_album) - 1 > self.y_index:
+            limit = self.y_limit - self.albums_height - 1
+        else:
+            limit = len(self.dq_album) - 1
 
         if self.last_movement:
             if self.y_index == limit:
@@ -119,6 +125,17 @@ class UI(object):
     def center_str(self, str):
         """Center the string in the x axis center"""
         return self.x_center - (len(str) // 2)
+
+    def cut_str(self, str):
+        """Cut string if content greater than x_limit"""
+        return str[:self.x_limit - 2]
+
+    def assert_string_size(self, lst):
+        """Change the size of the contents of a list of strings"""
+        for i, item in enumerate(lst):
+            if len(item) >= self.x_limit:
+                lst[i] = self.cut_str(item)
+        return lst
 
     def display_genres(self, move=False):
         """
@@ -158,6 +175,8 @@ class UI(object):
         """
         if move:
             self.move_albums_list()
+
+        self.assert_string_size(self.dq_album)
 
         for i, item in enumerate(self.dq_album):
             if i == self.y_limit - self.albums_height:
