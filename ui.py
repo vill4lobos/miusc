@@ -151,8 +151,11 @@ class UI(object):
 
         lst_genres = self.move_genres_list(move)
 
-        # TODO: padding around the dq_genres
-        len_total = 0  # max(self.x_limit - sum(map(len, lst_genres)), 0) // 2
+        len_total = max(self.x_limit - (sum(map(len, lst_genres)) +
+                                        ((len(lst_genres) - 1) *
+                                         self.GENRE_SEPARATE))
+                        , 0) // 2
+
         for i, item in enumerate(lst_genres):
             if i == self.center_lst(lst_genres):
                 self.screen.addstr(self.genres_height, len_total, item,
@@ -161,7 +164,7 @@ class UI(object):
                 self.screen.addstr(self.genres_height, len_total, item,
                                    curses.A_ITALIC)
 
-            len_total += len(item) + 2
+            len_total += len(item) + self.GENRE_SEPARATE
 
     def display_albums(self, move=False):
         """
