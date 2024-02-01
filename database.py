@@ -2,9 +2,6 @@ import requests
 import jmespath
 from tinydb import TinyDB, where
 
-# db = TinyDB('./db.json')
-# Album = Query()
-
 
 class Database:
 
@@ -12,6 +9,9 @@ class Database:
         self.DB_PATH = "./database/data.json"
 
     def add_discography(self):
+        raise NotImplementedError
+
+    def add_artist(self):
         raise NotImplementedError
 
     def get_all_albums(self):
@@ -65,14 +65,6 @@ class SQL(Database):
     pass
 
 
-# class Mediate:
-#     def __init__(self, cls):
-#         self.mediate = cls
-#
-#     def callDB(self):
-#         return self.mediate()
-
-
 class Get:
 
     def __init__(self):
@@ -80,9 +72,6 @@ class Get:
         self.default_artist_lists = \
             ['truckfighters', 'kyuss', 'sleep', 'damad', 'corrupted']
         self.dbs_dict = {'sql': SQL(), 'nosql': NoSQL()}
-
-        # self.db = Mediate(self.dbs_dict['nosql'])
-        # self.db = self.db.callDB()
 
         self.db = self.dbs_dict['nosql']
 
