@@ -153,8 +153,8 @@ class UI(object):
 
         len_total = max(self.x_limit - (sum(map(len, lst_genres)) +
                                         ((len(lst_genres) - 1) *
-                                         self.GENRE_SEPARATE))
-                        , 0) // 2
+                                         self.GENRE_SEPARATE)),
+                        0) // 2
 
         for i, item in enumerate(lst_genres):
             if i == self.center_lst(lst_genres):
@@ -237,8 +237,9 @@ class Get:
             db = GetDB()
             r = db.get_all_albums()
 
-        Get.genres_dct = r
-        return r.keys()
+        for genre in r:
+            Get.genres_dct.update(genre)
+        return Get.genres_dct.keys()
 
 
 def main(screen):

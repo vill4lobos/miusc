@@ -1,8 +1,7 @@
 import requests
 import jmespath
-import shelve
+from tinydb import TinyDB, where
 
-# from tinydb import TinyDB, Query
 # db = TinyDB('./db.json')
 # Album = Query()
 
@@ -10,36 +9,68 @@ import shelve
 class Database:
 
     def __init__(self):
+        self.DB_PATH = "./database/data.json"
 
-        self.DB_PATH = "./database/data.db"
+    def add_discography(self):
+        raise NotImplementedError
 
-        with shelve.open(self.DB_PATH) as db:
-            if not list(db.keys()):
-                db["genres"] = {}
-            if 'artists' not in list(db.keys()):
-                db["artists"] = {}
+    def get_all_albums(self):
+        raise NotImplementedError
 
-    def save_albums(self, dict, artist):
-        with shelve.open(self.DB_PATH, writeback=True) as db:
-            for item in dict:
-                if item[0] in db["genres"].keys():
-                    if item[1] in db['genres'][item[0]]:
-                        continue
-                    db["genres"][item[0]].append(item[1])
-                else:
-                    if item[0] is None:
-                        item[0] = 'undefined'
-                    db["genres"].update({item[0]: [item[1]]})
+    def exists_artist(self):
+        raise NotImplementedError
 
-            db["artists"].update({'artists': artist})
 
-    def get_all(self):
-        with shelve.open(self.DB_PATH) as db:
-            return db["genres"]
+class NoSQL(Database):
 
-    def get_artist(self, artist):
-        with shelve.open(self.DB_PATH) as db:
-            return True if artist in db['artists'] else False
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.db = TinyDB(self.DB_PATH)
+
+        self.tb_genres = self.db.table('genres')
+        self.tb_artists = self.db.table('genres')
+
+    def create_tables(self):
+        if 'genres' not in self.db.tables():
+            self.db.table('genres')
+        if 'artist' not in self.db.tables():
+            self.db.table('artist')
+
+    def add_discography(self, lst, artist):
+        for album in lst:
+            if self.tb_genres.search(where(album[0]).exists()):
+                self.tb_genres.update(
+                    lambda docs: docs[album[0]].append(album[1]),
+                    where(album[0]).exists())
+            else:
+                self.tb_genres.insert({album[0]: [album[1]]})
+
+        self.add_artist(artist)
+
+    def add_artist(self, artist):
+        if not self.tb_artists.search(where('artists').any([artist])):
+            self.tb_artists.update(
+                lambda docs: docs['artists'].append(artist),
+                where('artist').exists())
+
+    def get_all_albums(self):
+        return self.tb_genres.all()
+
+    def exists_artist(self, artist):
+        return True if artist in self.tb_artists.all() else False
+
+
+class SQL(Database):
+    pass
+
+
+# class Mediate:
+#     def __init__(self, cls):
+#         self.mediate = cls
+#
+#     def callDB(self):
+#         return self.mediate()
 
 
 class Get:
@@ -48,17 +79,17 @@ class Get:
 
         self.default_artist_lists = \
             ['truckfighters', 'kyuss', 'sleep', 'damad', 'corrupted']
+        self.dbs_dict = {'sql': SQL(), 'nosql': NoSQL()}
 
-        self.db = Database()
+        # self.db = Mediate(self.dbs_dict['nosql'])
+        # self.db = self.db.callDB()
 
-        # TODO: populate db if 50 entries or less
+        self.db = self.dbs_dict['nosql']
 
-    def get_albums(self, artist):
+        if len(self.db.get_all_albums()) < 8:
+            self.populate_db()
 
-        artist = ''.join(filter(str.isalpha, artist))
-        if self.db.get_artist(artist):
-            return "Already exists"
-
+    def request_albums(self, artist):
         r = requests.get(
             "http://musicbrainz.org/ws/2/release-group/" +
             "?query=artist:%22{}%22&fmt=json".format(artist)).json()
@@ -67,17 +98,27 @@ class Get:
             '"release-groups"[?"primary-type"==`Album`].\
             [tags[0].name, title]', r)
 
-        self.db.save_albums(fltr, artist)
-
         return fltr
 
-    def default_get_albums(self):
-        rtn_lst = []
+    def populate_db(self):
+        for artist in self.default_artist_lists:
+            if not self.db.exists_artist(artist):
+                discography = self.request_albums(artist)
+                self.db.add_discography(
+                    self.change_none_to_undefined(discography), artist)
 
-        for item in self.default_artist_lists:
-            rtn_lst.append(self.get_albums(item))
+    def change_none_to_undefined(self, lst):
+        return [list(map(lambda x: 'undefined' if x is None else x, sub_lst))
+                for sub_lst in lst]
 
-        return rtn_lst
+    def force_alpha_string(self, str):
+        return ''.join(filter(str.isalpha, str))
 
     def get_all_albums(self):
-        return self.db.get_all()
+        return self.db.get_all_albums()
+
+    def add_artist(self):
+        pass
+
+    def wrap_response(self):
+        pass
