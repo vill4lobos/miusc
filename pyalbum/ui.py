@@ -234,6 +234,7 @@ class Get:
         try:
             r = requests.get("http://127.0.0.1:5000/all").json()
         except (ConnectionError, HTTPError) as e:
+            _ = e  # TODO: create logging
             db = GetDB()
             r = db.get_all_albums()
 
@@ -264,7 +265,3 @@ def main(screen):
             menu.display_ui('y', True)
 
     screen.refresh()
-
-
-if __name__ == "__main__":
-    curses.wrapper(main)

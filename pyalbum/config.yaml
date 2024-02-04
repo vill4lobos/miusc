@@ -1,0 +1,3 @@
+run_api: True
+run_ui: True
+set_db: "NoSQL"
