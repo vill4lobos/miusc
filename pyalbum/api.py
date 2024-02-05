@@ -10,6 +10,11 @@ def root():
     return "'Sup!"
 
 
+@api.route("/test")
+def test():
+    return 'tst'
+
+
 @api.route("/genres", methods=["GET"])
 def genres():
     return db.get_all_albums()

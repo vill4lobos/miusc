@@ -23,8 +23,6 @@ class UI(object):
     Attr:
     y_limit, x_limit : int
         the limits of the terminal in each axis
-    x_center : int
-        the center position of the x axis of the terminal in session
     genres_height : int
         position where genres will be written over the x axis
     albums_height : int
@@ -40,7 +38,6 @@ class UI(object):
     def __init__(self, screen):
         self.screen = screen
         self.y_limit, self.x_limit = screen.getmaxyx()
-        self.x_center = self.x_limit // 2
         self.genres_height = 0
         self.albums_height = 2
         self.last_movement = None
@@ -122,9 +119,12 @@ class UI(object):
         """Return the middle index of some indexable object"""
         return len(lst) // 2
 
-    def center_str(self, str):
+    def center_str(self, str: str) -> int:
         """Center the string in the x axis center"""
-        return self.x_center - (len(str) // 2)
+        return self.center_x() - (len(str) // 2)
+
+    def center_x(self) -> int:
+        return self.x_limit // 2
 
     def cut_str(self, str):
         """Cut string if content greater than x_limit"""
@@ -202,6 +202,7 @@ class UI(object):
         """
         self.screen.refresh()
         self.screen.clear()
+        self.resize_window()
 
         if movement is not None:
             self.last_movement = True if movement else False
@@ -213,6 +214,9 @@ class UI(object):
             self.y_index = 0
 
         self.display_albums(True if axis == 'y' else False)
+
+    def resize_window(self):
+        self.y_limit, self.x_limit = self.screen.getmaxyx()
 
 
 class Get:
